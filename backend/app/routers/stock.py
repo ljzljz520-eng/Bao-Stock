@@ -16,20 +16,10 @@ from app.models.schemas import (
     TradeDatesRequest,
     YearType,
 )
-from app.routers._common import build, call
+from app.routers._common import build, call, normalize_history_frequency
 from app.services import stock_service
 
 router = APIRouter(prefix="/stock", tags=["股票数据"])
-
-
-def _normalize_history_frequency(value: str) -> str:
-    normalized = value.strip().lower()
-    return {
-        "5m": "5",
-        "15m": "15",
-        "30m": "30",
-        "60m": "60",
-    }.get(normalized, normalized)
 
 
 @router.get("/history_k_data", summary="历史K线数据", response_model=APIResponse)
@@ -46,7 +36,7 @@ def history_k_data(
 ):
     req = build(HistoryKDataRequest, code=code, fields=fields,
                 start_date=start_date, end_date=end_date,
-                frequency=_normalize_history_frequency(frequency), adjustflag=adjustflag)
+                frequency=normalize_history_frequency(frequency), adjustflag=adjustflag)
     return call(stock_service.get_history_k_data, req)
 
 

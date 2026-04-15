@@ -31,11 +31,7 @@ def _ensure_login():
         _logged_in = True
 
 
-def _normalize_history_frequency(value: str) -> str:
-    normalized = value.strip().lower()
-    if normalized.endswith("m") and normalized[:-1].isdigit():
-        return normalized[-1]
-    return normalized
+from app.routers._common import normalize_history_frequency as _normalize_history_frequency
 
 
 # ══════════════════════════════════════════════════════════

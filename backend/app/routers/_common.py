@@ -11,6 +11,17 @@ from app.models.schemas import APIResponse
 logger = logging.getLogger(__name__)
 
 
+def normalize_history_frequency(value: str) -> str:
+    """归一化 K线频率参数，保持 HTTP 和 MCP 一致"""
+    normalized = value.strip().lower()
+    return {
+        "5m": "5",
+        "15m": "15",
+        "30m": "30",
+        "60m": "60",
+    }.get(normalized, normalized)
+
+
 def ok(data: list[dict], total: int | None = None) -> APIResponse:
     return APIResponse(data=data, total=len(data) if total is None else total)
 
@@ -19,9 +30,11 @@ def call(fn, req):
     """统一调用 service 函数，捕获 BaostockError"""
     try:
         result = fn(req)
+        if isinstance(result, tuple):
+            data, total = result
+            logger.info("%s -> %d records (total: %d)", fn.__name__, len(data), total)
+            return ok(data, total=total)
         logger.info("%s -> %d records", fn.__name__, len(result))
-        if getattr(req, "page", None) is not None and getattr(req, "page_size", None) is not None:
-            return ok(result, total=max(len(result) - 1, 0))
         return ok(result)
     except BaostockError as e:
         logger.error("%s failed: [%s] %s", fn.__name__, e.error_code, e.error_msg)

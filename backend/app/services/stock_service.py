@@ -25,24 +25,19 @@ def get_history_k_data(req: HistoryKDataRequest) -> list[dict]:
 
 
 def get_trade_dates(req: TradeDatesRequest) -> list[dict]:
-    data = client.query_trade_dates(
+    return client.query_trade_dates(
         start_date=req.start_date, end_date=req.end_date
     )
-    if req.end_date:
-        data = [
-            row for row in data
-            if row.get("calendar_date", "") < req.end_date
-        ]
-    return data
 
 
-def get_all_stock(req: AllStockRequest) -> list[dict]:
+def get_all_stock(req: AllStockRequest) -> tuple[list[dict], int]:
     data = client.query_all_stock(day=req.day)
+    total = len(data)
     if req.page is not None and req.page_size is not None:
         start = (req.page - 1) * req.page_size
         end = start + req.page_size
-        return data[start:end]
-    return data
+        return data[start:end], total
+    return data, total
 
 
 def get_stock_basic(req: StockBasicRequest) -> list[dict]:
