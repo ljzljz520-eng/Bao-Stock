@@ -5,6 +5,7 @@ import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -82,6 +83,33 @@ async def baostock_error_handler(request: Request, exc: BaostockError):
             "code": -1,
             "message": exc.error_msg,
             "error_code": exc.error_code,
+            "data": [],
+            "total": 0,
+        },
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_error_handler(request: Request, exc: RequestValidationError):
+    logger.warning("RequestValidationError on %s: %s", request.url.path, len(exc.errors()))
+    if request.url.path.startswith(f"{settings.api_prefix}/stock/"):
+        first_error = exc.errors()[0] if exc.errors() else {"msg": "参数校验失败"}
+        return JSONResponse(
+            status_code=422,
+            content={
+                "code": -1,
+                "message": "参数校验失败",
+                "detail": first_error.get("msg", "参数校验失败"),
+                "data": {},
+                "total": 0,
+            },
+        )
+    return JSONResponse(
+        status_code=422,
+        content={
+            "code": -1,
+            "message": "参数校验失败",
+            "detail": exc.errors(),
             "data": [],
             "total": 0,
         },

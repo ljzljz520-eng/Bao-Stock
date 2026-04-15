@@ -11,8 +11,8 @@ from app.models.schemas import APIResponse
 logger = logging.getLogger(__name__)
 
 
-def ok(data: list[dict]) -> APIResponse:
-    return APIResponse(data=data, total=len(data))
+def ok(data: list[dict], total: int | None = None) -> APIResponse:
+    return APIResponse(data=data, total=len(data) if total is None else total)
 
 
 def call(fn, req):
@@ -20,6 +20,8 @@ def call(fn, req):
     try:
         result = fn(req)
         logger.info("%s -> %d records", fn.__name__, len(result))
+        if getattr(req, "page", None) is not None and getattr(req, "page_size", None) is not None:
+            return ok(result, total=max(len(result) - 1, 0))
         return ok(result)
     except BaostockError as e:
         logger.error("%s failed: [%s] %s", fn.__name__, e.error_code, e.error_msg)

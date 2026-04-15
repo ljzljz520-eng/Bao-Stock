@@ -22,6 +22,16 @@ from app.services import stock_service
 router = APIRouter(prefix="/stock", tags=["股票数据"])
 
 
+def _normalize_history_frequency(value: str) -> str:
+    normalized = value.strip().lower()
+    return {
+        "5m": "5",
+        "15m": "15",
+        "30m": "30",
+        "60m": "60",
+    }.get(normalized, normalized)
+
+
 @router.get("/history_k_data", summary="历史K线数据", response_model=APIResponse)
 def history_k_data(
     code: str = Query(..., description="证券代码，如 sh.600000"),
@@ -31,12 +41,12 @@ def history_k_data(
     ),
     start_date: str | None = Query(None, description="起始日期 YYYY-MM-DD"),
     end_date: str | None = Query(None, description="终止日期 YYYY-MM-DD"),
-    frequency: Frequency = Query(Frequency.DAILY, description="频率: d/w/m/5/15/30/60"),
+    frequency: str = Query(Frequency.DAILY.value, description="频率: d/w/m/5/15/30/60"),
     adjustflag: AdjustFlag = Query(AdjustFlag.NONE, description="复权: 1后复权 2前复权 3不复权"),
 ):
     req = build(HistoryKDataRequest, code=code, fields=fields,
                 start_date=start_date, end_date=end_date,
-                frequency=frequency, adjustflag=adjustflag)
+                frequency=_normalize_history_frequency(frequency), adjustflag=adjustflag)
     return call(stock_service.get_history_k_data, req)
 
 
@@ -50,8 +60,12 @@ def trade_dates(
 
 
 @router.get("/all_stock", summary="全部证券列表", response_model=APIResponse)
-def all_stock(day: str | None = Query(None, description="查询日期 YYYY-MM-DD")):
-    req = build(AllStockRequest, day=day)
+def all_stock(
+    day: str | None = Query(None, description="查询日期 YYYY-MM-DD"),
+    page: int | None = Query(None, ge=1, description="分页页码，从 1 开始"),
+    page_size: int | None = Query(None, ge=1, le=500, description="分页大小"),
+):
+    req = build(AllStockRequest, day=day, page=page, page_size=page_size)
     return call(stock_service.get_all_stock, req)
 
 

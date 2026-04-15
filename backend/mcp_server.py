@@ -31,6 +31,13 @@ def _ensure_login():
         _logged_in = True
 
 
+def _normalize_history_frequency(value: str) -> str:
+    normalized = value.strip().lower()
+    if normalized.endswith("m") and normalized[:-1].isdigit():
+        return normalized[-1]
+    return normalized
+
+
 # ══════════════════════════════════════════════════════════
 #  股票行情工具
 # ══════════════════════════════════════════════════════════
@@ -57,7 +64,7 @@ def query_history_k_data(
     _ensure_login()
     return client.query_history_k_data(
         code=code, fields=fields, start_date=start_date or None,
-        end_date=end_date or None, frequency=frequency, adjustflag=adjustflag,
+        end_date=end_date or None, frequency=_normalize_history_frequency(frequency), adjustflag=adjustflag,
     )
 
 

@@ -104,6 +104,8 @@ class TradeDatesRequest(BaseModel):
 
 class AllStockRequest(BaseModel):
     day: str | None = Field(None, description="查询日期 YYYY-MM-DD")
+    page: int | None = Field(None, ge=1, description="分页页码，从 1 开始")
+    page_size: int | None = Field(None, ge=1, le=500, description="分页大小")
 
     @field_validator("day")
     @classmethod
