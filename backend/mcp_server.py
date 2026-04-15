@@ -33,9 +33,12 @@ def _ensure_login():
 
 def _normalize_history_frequency(value: str) -> str:
     normalized = value.strip().lower()
-    if normalized.endswith("m") and normalized[:-1].isdigit():
-        return normalized[-1]
-    return normalized
+    return {
+        "5m": "5",
+        "15m": "15",
+        "30m": "30",
+        "60m": "60",
+    }.get(normalized, normalized)
 
 
 # ══════════════════════════════════════════════════════════
