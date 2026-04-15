@@ -1,0 +1,30 @@
+services:
+  baostock-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: baostock-api
+    ports:
+      - "8000:8000"
+    environment:
+      - BAOSTOCK_DEBUG=false
+      - BAOSTOCK_HOST=0.0.0.0
+      - BAOSTOCK_PORT=8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  baostock-mcp:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: baostock-mcp
+    environment:
+      - BAOSTOCK_DEBUG=false
+    restart: unless-stopped
+    command: ["python", "mcp_server.py"]
+    stdin_open: true
