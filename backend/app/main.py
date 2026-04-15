@@ -13,7 +13,7 @@ from pydantic import ValidationError
 
 from app.config import settings
 from app.core.baostock_client import client
-from app.core.exceptions import BaostockError
+from app.core.exceptions import BaostockError, BaostockHTTPException
 from app.routers import finance, macro, stock
 
 # ── 统一日志配置 ─────────────────────────────────────────
@@ -74,18 +74,44 @@ async def log_requests(request: Request, call_next):
 
 # ── 异常处理 ─────────────────────────────────────────────
 
+def _build_error_response(
+    status_code: int,
+    message: str,
+    error_code: str | None = None,
+    detail: str | None = None,
+) -> JSONResponse:
+    """构建统一格式的错误响应"""
+    content = {
+        "code": -1,
+        "message": message,
+        "data": [],
+        "total": 0,
+    }
+    if error_code is not None:
+        content["error_code"] = error_code
+    if detail is not None:
+        content["detail"] = detail
+    return JSONResponse(status_code=status_code, content=content)
+
+
 @app.exception_handler(BaostockError)
 async def baostock_error_handler(request: Request, exc: BaostockError):
     logger.error("BaostockError on %s: [%s] %s", request.url.path, exc.error_code, exc.error_msg)
-    return JSONResponse(
+    return _build_error_response(
         status_code=500,
-        content={
-            "code": -1,
-            "message": exc.error_msg,
-            "error_code": exc.error_code,
-            "data": [],
-            "total": 0,
-        },
+        message=exc.error_msg,
+        error_code=exc.error_code,
+    )
+
+
+@app.exception_handler(BaostockHTTPException)
+async def baostock_http_exception_handler(request: Request, exc: BaostockHTTPException):
+    logger.error("BaostockHTTPException on %s: %s", request.url.path, exc.detail)
+    detail = exc.detail if isinstance(exc.detail, dict) else {}
+    return _build_error_response(
+        status_code=exc.status_code,
+        message=detail.get("error_msg", "内部错误"),
+        error_code=detail.get("error_code"),
     )
 
 
@@ -93,28 +119,21 @@ async def baostock_error_handler(request: Request, exc: BaostockError):
 async def request_validation_error_handler(request: Request, exc: RequestValidationError):
     logger.warning("RequestValidationError on %s: %s", request.url.path, len(exc.errors()))
     first_error = exc.errors()[0] if exc.errors() else {"msg": "参数校验失败"}
-    return JSONResponse(
+    return _build_error_response(
         status_code=422,
-        content={
-            "code": -1,
-            "message": "参数校验失败",
-            "detail": first_error.get("msg", "参数校验失败"),
-            "data": [],
-            "total": 0,
-        },
+        message="参数校验失败",
+        detail=first_error.get("msg", "参数校验失败"),
     )
 
 
 @app.exception_handler(ValidationError)
 async def validation_error_handler(request: Request, exc: ValidationError):
     logger.warning("ValidationError on %s: %s", request.url.path, exc.error_count())
-    return JSONResponse(
+    first_error = exc.errors()[0] if exc.errors() else {"msg": "参数校验失败"}
+    return _build_error_response(
         status_code=422,
-        content={
-            "code": -1,
-            "message": "参数校验失败",
-            "detail": exc.errors(),
-        },
+        message="参数校验失败",
+        detail=first_error.get("msg", "参数校验失败"),
     )
 
 
