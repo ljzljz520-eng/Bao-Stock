@@ -92,18 +92,6 @@ async def baostock_error_handler(request: Request, exc: BaostockError):
 @app.exception_handler(RequestValidationError)
 async def request_validation_error_handler(request: Request, exc: RequestValidationError):
     logger.warning("RequestValidationError on %s: %s", request.url.path, len(exc.errors()))
-    if request.url.path.startswith(f"{settings.api_prefix}/stock/"):
-        first_error = exc.errors()[0] if exc.errors() else {"msg": "参数校验失败"}
-        return JSONResponse(
-            status_code=422,
-            content={
-                "code": -1,
-                "message": "参数校验失败",
-                "detail": first_error.get("msg", "参数校验失败"),
-                "data": {},
-                "total": 0,
-            },
-        )
     return JSONResponse(
         status_code=422,
         content={
@@ -125,6 +113,8 @@ async def validation_error_handler(request: Request, exc: ValidationError):
             "code": -1,
             "message": "参数校验失败",
             "detail": exc.errors(),
+            "data": [],
+            "total": 0,
         },
     )
 

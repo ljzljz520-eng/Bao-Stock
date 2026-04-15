@@ -71,6 +71,7 @@ class APIResponse(BaseModel):
     message: str = "success"
     data: list[dict[str, Any]] = Field(default_factory=list)
     total: int = 0
+    detail: Any = None
 
 
 # ── 股票行情请求 ─────────────────────────────────────────

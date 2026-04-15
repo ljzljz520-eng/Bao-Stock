@@ -25,15 +25,9 @@ def get_history_k_data(req: HistoryKDataRequest) -> list[dict]:
 
 
 def get_trade_dates(req: TradeDatesRequest) -> list[dict]:
-    data = client.query_trade_dates(
+    return client.query_trade_dates(
         start_date=req.start_date, end_date=req.end_date
     )
-    if req.end_date:
-        data = [
-            row for row in data
-            if row.get("calendar_date", "") < req.end_date
-        ]
-    return data
 
 
 def get_all_stock(req: AllStockRequest) -> list[dict]:
