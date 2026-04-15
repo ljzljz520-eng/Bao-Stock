@@ -21,7 +21,7 @@ def call(fn, req):
         result = fn(req)
         logger.info("%s -> %d records", fn.__name__, len(result))
         if getattr(req, "page", None) is not None and getattr(req, "page_size", None) is not None:
-            return ok(result, total=max(len(result) - 1, 0))
+            return ok(result, total=len(result))
         return ok(result)
     except BaostockError as e:
         logger.error("%s failed: [%s] %s", fn.__name__, e.error_code, e.error_msg)
