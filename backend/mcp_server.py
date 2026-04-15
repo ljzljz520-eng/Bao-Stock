@@ -31,14 +31,7 @@ def _ensure_login():
         _logged_in = True
 
 
-def _normalize_history_frequency(value: str) -> str:
-    normalized = value.strip().lower()
-    return {
-        "5m": "5",
-        "15m": "15",
-        "30m": "30",
-        "60m": "60",
-    }.get(normalized, normalized)
+from app.routers._common import normalize_history_frequency as _normalize_history_frequency
 
 
 # ══════════════════════════════════════════════════════════

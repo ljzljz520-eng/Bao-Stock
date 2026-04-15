@@ -113,6 +113,8 @@ async def validation_error_handler(request: Request, exc: ValidationError):
             "code": -1,
             "message": "参数校验失败",
             "detail": exc.errors(),
+            "data": [],
+            "total": 0,
         },
     )
 

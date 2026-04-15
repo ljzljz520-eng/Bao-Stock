@@ -11,6 +11,17 @@ from app.models.schemas import APIResponse
 logger = logging.getLogger(__name__)
 
 
+def normalize_history_frequency(value: str) -> str:
+    """归一化 K线频率参数，保持 HTTP 和 MCP 一致"""
+    normalized = value.strip().lower()
+    return {
+        "5m": "5",
+        "15m": "15",
+        "30m": "30",
+        "60m": "60",
+    }.get(normalized, normalized)
+
+
 def ok(data: list[dict], total: int | None = None) -> APIResponse:
     return APIResponse(data=data, total=len(data) if total is None else total)
 
